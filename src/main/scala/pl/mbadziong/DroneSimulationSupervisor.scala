@@ -18,9 +18,8 @@ class DroneSimulationSupervisor(context: ActorContext[Command]) extends Abstract
 
   override def onMessage(msg: Command): Behavior[Command] = msg match {
     case CreateDroneOperator(name) =>
-      //TODO: set name
-      val droneOperator = context.spawn(DroneOperator(), "name")
-      droneOperator ! PrepareDroneFleet(20)
+      val droneOperator = context.spawn(DroneOperator(name), "name")
+      droneOperator ! PrepareDroneFleet(5)
       this
   }
 

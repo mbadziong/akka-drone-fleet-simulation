@@ -6,5 +6,5 @@ object DroneFleetSimulator extends App {
   val droneSimulationSupervisor: ActorSystem[DroneSimulationSupervisor.Command] =
     ActorSystem(DroneSimulationSupervisor(), "DroneFleetSimulation")
 
-  droneSimulationSupervisor ! DroneSimulationSupervisor.CreateDroneOperator("drone operator 1")
+  droneSimulationSupervisor ! DroneSimulationSupervisor.CreateDroneOperator("Mateusz")
 }
