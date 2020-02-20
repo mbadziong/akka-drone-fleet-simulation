@@ -1,7 +1,7 @@
 package pl.mbadziong
 
-import akka.actor.typed.{Behavior, PostStop, Signal}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import akka.actor.typed.{Behavior, PostStop, Signal}
 import pl.mbadziong.DroneOperator.PrepareDroneFleet
 import pl.mbadziong.DroneSimulationSupervisor.{Command, CreateDroneOperator}
 

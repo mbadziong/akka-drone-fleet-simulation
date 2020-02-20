@@ -1,7 +1,7 @@
 package pl.mbadziong
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.actor.typed.{Behavior, PostStop, Signal}
+import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
 
 object DroneOperator {
 
@@ -18,7 +18,8 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
   import DroneOperator._
   import pl.mbadziong.Drone.BootDrone
 
-  val name: String = operatorName
+  val name: String           = operatorName
+  private var droneIdToActor = Map.empty[Int, ActorRef[Drone.Command]]
 
   context.log.info(s"drone operator $name created")
 
@@ -26,8 +27,14 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
     case PrepareDroneFleet(dronesCount) =>
       context.log.info(s"Initializing $dronesCount drones for operator $operatorName")
       (1 to dronesCount) map (
-          droneNum => context.spawn(Drone(droneNum, operatorName), s"drone-$droneNum")
-      ) foreach (_ ! BootDrone())
+          droneNum => {
+            val drone = context.spawn(Drone(droneNum, operatorName), s"drone-$droneNum")
+            droneIdToActor += droneNum -> drone
+            drone
+          }
+      ) foreach (
+        _ ! BootDrone()
+      )
       this
     case StopDroneFleet() =>
       Behaviors.stopped

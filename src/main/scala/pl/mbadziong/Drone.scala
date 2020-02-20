@@ -1,7 +1,8 @@
 package pl.mbadziong
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.actor.typed.{Behavior, PostStop, Signal}
+import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
+import pl.mbadziong.flight.{FlightRequest, FlightResponse}
 
 object Drone {
 
@@ -9,15 +10,13 @@ object Drone {
     Behaviors.setup(context => new Drone(context, droneId, operator))
 
   sealed trait Command
-  final case class BootDrone()    extends Command
-  final case class TurnOffDrone() extends Command
+  final case class BootDrone()                                                         extends Command
+  final case class TurnOffDrone()                                                      extends Command
+  final case class Fly(flightRequest: FlightRequest, sender: ActorRef[FlightResponse]) extends Command
 }
 
-class Drone(context: ActorContext[Drone.Command], droneId: Int, operatorName: String) extends AbstractBehavior[Drone.Command](context) {
+class Drone(context: ActorContext[Drone.Command], val id: Int, val operator: String) extends AbstractBehavior[Drone.Command](context) {
   import Drone._
-
-  val id: Int          = droneId
-  val operator: String = operatorName
 
   context.log.info(s"Drone [$operator | $id] has been created")
 
@@ -28,6 +27,10 @@ class Drone(context: ActorContext[Drone.Command], droneId: Int, operatorName: St
         this
       case TurnOffDrone() =>
         context.log.info(s"Drone [$operator | $id] has been turned off")
+        this
+      case Fly(flyRequest: FlightRequest, sender: ActorRef[FlightResponse]) =>
+        context.log.info(s"Drone [$operator | $id] is during $flyRequest")
+        sender ! new FlightResponse(flyRequest.id)
         this
     }
   }
