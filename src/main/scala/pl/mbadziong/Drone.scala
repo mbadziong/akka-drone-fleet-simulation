@@ -13,6 +13,7 @@ object Drone {
   final case class BootDrone()                                                         extends Command
   final case class TurnOffDrone()                                                      extends Command
   final case class Fly(flightRequest: FlightRequest, sender: ActorRef[FlightResponse]) extends Command
+  case object Passivate                                                                extends Command
 }
 
 class Drone(context: ActorContext[Drone.Command], val id: Int, val operator: String) extends AbstractBehavior[Drone.Command](context) {
@@ -32,12 +33,14 @@ class Drone(context: ActorContext[Drone.Command], val id: Int, val operator: Str
         context.log.info(s"Drone [$operator | $id] is during $flyRequest")
         sender ! new FlightResponse(flyRequest.id)
         this
+      case Passivate =>
+        Behaviors.stopped
     }
   }
 
   override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
     case PostStop =>
-      println(s"drone [$operator | $id] has been stopped")
+      context.log.info(s"drone [$operator | $id] has been stopped")
       this
   }
 }
