@@ -10,7 +10,7 @@ object DroneOperator {
     Behaviors.setup(context => new DroneOperator(context, operatorName))
 
   sealed trait Command
-  final case class PrepareDroneFleet(dronesCount: Int, replyTo: ActorRef[DroneFleetCreated])                                                            extends Command
+  final case class PrepareDroneFleet(dronesCount: Int, replyTo: ActorRef[DroneFleetCreated])                      extends Command
   final case class StopDroneFleet()                                                                               extends Command
   final case class RequestOwnedDrones(requestId: Long, operatorName: String, replyTo: ActorRef[ReplyOwnedDrones]) extends Command
   final case class ReplyOwnedDrones(requestId: Long, ids: Set[Int])
@@ -38,7 +38,7 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
             droneActor
           }
       ) foreach (
-        _ ! BootDrone()
+        _ ! BootDrone
       )
       replyTo ! DroneFleetCreated(droneIdToActor)
       this
@@ -50,10 +50,12 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
       Behaviors.stopped
     case RequestOwnedDrones(requestId, operatorName, replyTo) =>
       if (operatorName == name) {
+        context.log.info(s"Operator $name owns $droneIdToActor")
         replyTo ! ReplyOwnedDrones(requestId, droneIdToActor.keySet)
         this
-      } else
+      } else {
         Behaviors.unhandled
+      }
   }
 
   override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
