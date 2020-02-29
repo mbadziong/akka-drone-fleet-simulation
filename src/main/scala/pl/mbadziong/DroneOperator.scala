@@ -2,14 +2,15 @@ package pl.mbadziong
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
-import pl.mbadziong.DroneSimulationSupervisor.{DroneFleetCreated, RequestFleetState}
+import pl.mbadziong.SimulationSupervisor.{DroneFleetCreated, RequestFleetState}
+import pl.mbadziong.airport.Airport
 
 import scala.concurrent.duration._
 
 object DroneOperator {
 
-  def apply(operatorName: String): Behavior[Command] =
-    Behaviors.setup(context => new DroneOperator(context, operatorName))
+  def apply(operatorName: String, airport: Airport): Behavior[Command] =
+    Behaviors.setup(context => new DroneOperator(context, operatorName, airport))
 
   trait Command
   final case class PrepareDroneFleet(dronesCount: Int, replyTo: ActorRef[DroneFleetCreated]) extends Command
@@ -21,22 +22,21 @@ object DroneOperator {
   final case class DroneTerminated(drone: ActorRef[Drone.Command], operatorName: String, droneId: Long) extends Command
 }
 
-class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: String)
+class DroneOperator(context: ActorContext[DroneOperator.Command], val name: String, val airport: Airport)
     extends AbstractBehavior[DroneOperator.Command](context) {
   import DroneOperator._
   import pl.mbadziong.Drone.BootDrone
 
-  val name: String           = operatorName
   private var droneIdToActor = Map.empty[Long, ActorRef[Drone.Command]]
 
-  context.log.info(s"drone operator $name created")
+  context.log.info(s"drone operator $name with airport $airport created")
 
   override def onMessage(msg: DroneOperator.Command): Behavior[DroneOperator.Command] = msg match {
     case PrepareDroneFleet(dronesCount, replyTo) =>
-      context.log.info(s"Initializing $dronesCount drones for operator $operatorName")
+      context.log.info(s"Initializing $dronesCount drones for operator $name")
       (1 to dronesCount) map (
           droneNum => {
-            val droneActor = context.spawn(Drone(droneNum, operatorName), s"drone-$droneNum")
+            val droneActor = context.spawn(Drone(droneNum, name), s"drone-$droneNum")
             context.watchWith(droneActor, DroneTerminated(droneActor, name, droneNum))
             droneIdToActor += droneNum.toLong -> droneActor
             droneActor
@@ -51,10 +51,11 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
         case Some(droneActor) =>
           replyTo ! DroneAddedToFleet(droneActor)
         case None =>
-          context.log.info(s"Drone $droneId has been assigned to operator $operatorName")
-          val droneActor = context.spawn(Drone(droneId, operatorName), s"drone-$droneId")
-          context.watchWith(droneActor, DroneTerminated(droneActor, operatorName, droneId))
+          context.log.info(s"Drone $droneId has been assigned to operator $name")
+          val droneActor = context.spawn(Drone(droneId, name), s"drone-$droneId")
+          context.watchWith(droneActor, DroneTerminated(droneActor, name, droneId))
           droneIdToActor += droneId -> droneActor
+          replyTo ! DroneAddedToFleet(droneActor)
       }
       this
     case DroneTerminated(_, _, droneId) =>
@@ -72,8 +73,8 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
         Behaviors.unhandled
       }
     case RequestFleetState(requestId, operator, replyTo) =>
-      if (operator == operatorName) {
-        context.spawnAnonymous(FleetStateQuery(droneIdToActor, requestId, replyTo, 3.seconds))
+      if (operator == name) {
+        context.spawnAnonymous(FleetStateQuery(droneIdToActor, airport, requestId, replyTo, 3.seconds))
         this
       } else {
         Behaviors.unhandled
@@ -82,7 +83,7 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], operatorName: 
 
   override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
     case PostStop =>
-      context.log.info(s"drone operator $operatorName stopped")
+      context.log.info(s"drone operator $name stopped")
       this
   }
 }
