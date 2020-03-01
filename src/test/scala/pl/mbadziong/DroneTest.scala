@@ -18,7 +18,7 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val flightRequest = new FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
 
       droneActor ! Drone.Fly(flightRequest, probe.ref)
-      val response = probe.receiveMessage()
+      val response = probe.receiveMessage
 
       response.id should ===(flightId)
     }
@@ -47,11 +47,11 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val flightRequest = new FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
 
       droneActor ! Drone.Fly(flightRequest, probe.ref)
-      probe.receiveMessage()
+      probe.receiveMessage
 
       val positionProbe = createTestProbe[RespondState]()
       droneActor ! Drone.ReadState(3, positionProbe.ref)
-      val positionResponse = positionProbe.receiveMessage()
+      val positionResponse = positionProbe.receiveMessage
 
       positionResponse.position === Some(1.0, 3.0)
     }

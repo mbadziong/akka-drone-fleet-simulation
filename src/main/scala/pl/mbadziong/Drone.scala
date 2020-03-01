@@ -6,12 +6,14 @@ import pl.mbadziong.Drone.Command
 import pl.mbadziong.drone.Position
 import pl.mbadziong.flight.{FlightRequest, FlightResponse}
 
+import scala.concurrent.duration._
+
 object Drone {
 
-  def apply(droneId: Long, operator: String): Behavior[Command] =
+  def apply(droneId: Long, operator: String, tick: FiniteDuration = 1.millis): Behavior[Command] =
     Behaviors.setup { context =>
       Behaviors.withTimers { timers =>
-        new Drone(context, timers, droneId, operator)
+        new Drone(context, timers, droneId, operator, tick)
       }
     }
 
@@ -26,7 +28,7 @@ object Drone {
   final case class PositionSet(requestId: Long)
 }
 
-class Drone(context: ActorContext[Drone.Command], timers: TimerScheduler[Command], val id: Long, val operator: String)
+class Drone(context: ActorContext[Drone.Command], timers: TimerScheduler[Command], val id: Long, val operator: String, tick: FiniteDuration)
     extends AbstractBehavior[Drone.Command](context) {
   import Drone._
 
@@ -61,7 +63,7 @@ class Drone(context: ActorContext[Drone.Command], timers: TimerScheduler[Command
           case ::(head, tail) =>
             context.log.info(s"Drone [$operator | $id] is during flight at position $head")
             position = Some(head)
-            context.self ! DuringFlight(new FlightRequest(flightRequest.id, tail), replyTo)
+            timers.startSingleTimer(DuringFlight(new FlightRequest(flightRequest.id, tail), replyTo), tick)
           case Nil =>
             context.log.info(s"Drone [$operator | $id] has ended flight id ${flightRequest.id}")
             replyTo ! new FlightResponse(flightRequest.id)
