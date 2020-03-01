@@ -1,3 +1,5 @@
 package pl.mbadziong.flight
 
-class FlightRequest(val id: Int) {}
+import pl.mbadziong.drone.Position
+
+class FlightRequest(val id: Int, val route: List[Position]) {}
