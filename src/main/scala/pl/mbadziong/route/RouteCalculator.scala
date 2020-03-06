@@ -1,21 +1,19 @@
 package pl.mbadziong.route
 
-import java.util
-
 import pl.mbadziong.drone.Position
 
 import scala.collection.mutable.ListBuffer
 
-object RouteCalculator {
+private object RouteCalculator {
   private val RADIUS_OF_EARTH = 6371000 // radius of earth in m
 
-  def getPoints(startPoint: Position, endPoint: Position, meterPerSecond: Int) = {
+  def getPoints(startPoint: Position, endPoint: Position, meterPerSecond: Int): List[Position] = {
     if (meterPerSecond <= 0) throw new IllegalArgumentException("meterPerSecond less or equals 0")
     val azimuth = calculateBearing(startPoint, endPoint)
     getLocations(meterPerSecond, azimuth, startPoint, endPoint)
   }
 
-  private def getLocations(interval: Int, azimuth: Double, start: Position, end: Position) = {
+  private def getLocations(interval: Int, azimuth: Double, start: Position, end: Position): List[Position] = {
     val distance         = getPathLength(start, end)
     val pointsToGenerate = distance.toInt / interval
     println(s"generating $pointsToGenerate middle points for distance of $distance meters with interval of $interval meters per second")
@@ -36,7 +34,7 @@ object RouteCalculator {
   /**
     * calculates the distance between two lat, long coordinate pairs
     */
-  private def getPathLength(start: Position, end: Position) = {
+  private def getPathLength(start: Position, end: Position): Double = {
     val lat1Rads = Math.toRadians(start.lat)
     val lat2Rads = Math.toRadians(end.lat)
     val deltaLat = Math.toRadians(end.lat - start.lat)
@@ -50,7 +48,7 @@ object RouteCalculator {
   /**
     * returns the lat an long of destination point given the start lat, long, aziuth, and distance
     */
-  private def getDestinationLatLng(lat: Double, lng: Double, azimuth: Double, distance: Double) = {
+  private def getDestinationLatLng(lat: Double, lng: Double, azimuth: Double, distance: Double): Position = {
     val radiusKm = RADIUS_OF_EARTH / 1000.0 //Radius of the Earth in km
     val brng     = Math.toRadians(azimuth) //Bearing is degrees converted to radians.
     val d        = distance / 1000 //Distance m converted to km
@@ -69,7 +67,7 @@ object RouteCalculator {
     * calculates the azimuth in degrees from start point to end point");
     * double startLat = Math.toRadians(start.getLat());
     */
-  private def calculateBearing(start: Position, end: Position) = {
+  private def calculateBearing(start: Position, end: Position): Double = {
     val startLat  = Math.toRadians(start.lat)
     val startLong = Math.toRadians(start.lon)
     val endLat    = Math.toRadians(end.lat)
