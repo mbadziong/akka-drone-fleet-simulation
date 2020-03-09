@@ -1,21 +1,13 @@
 package pl.mbadziong
 
-import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
-import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
-import pl.mbadziong.Drone.Command
+import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
+import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.drone.Position
 import pl.mbadziong.flight.{FlightRequest, FlightResponse}
 
 import scala.concurrent.duration._
 
 object Drone {
-
-//  def apply(droneId: Long, operator: String, tick: FiniteDuration = 1.millis): Behavior[Command] =
-//    Behaviors.setup { context =>
-//      Behaviors.withTimers { timers =>
-//        new Drone(context, timers, droneId, operator, tick)
-//      }
-//    }
 
   def apply(droneId: Long, operator: String, tick: FiniteDuration = 1.millis): Behavior[Command] =
     Behaviors.withTimers { timers =>
@@ -41,13 +33,13 @@ object Drone {
         case Fly(flyRequest: FlightRequest, replyTo: ActorRef[FlightResponse]) =>
           context.log.info(s"Drone [$operator | $id] accepted $flyRequest")
           context.self ! DuringFlight(flyRequest, replyTo)
-          Behaviors.same
+          flying(timers, id, operator, position, tick)
         case TurnOffDrone =>
           context.log.info(s"Drone [$operator | $id] has been turned off")
           Behaviors.stopped
         case ReadState(requestId, replyTo) =>
           context.log.info(s"State for drone $id is $position")
-          replyTo ! RespondState(requestId, id, position)
+          replyTo ! RespondState(requestId, id, Some(position))
           Behaviors.same
       }
     }
@@ -65,50 +57,14 @@ object Drone {
               context.log.info(s"Drone [$operator | $id] has ended flight id ${flightRequest.id}")
               replyTo ! new FlightResponse(flightRequest.id)
               docked(timers, id, operator, position, tick)
-            case TurnOffDrone =>
-              context.log.info(s"Drone [$operator | $id] has been turned off")
-              Behaviors.stopped
-            case ReadState(requestId, replyTo) =>
-              context.log.info(s"State for drone $id is $position")
-              replyTo ! RespondState(requestId, id, position)
-              this
           }
+        case TurnOffDrone =>
+          context.log.info(s"Drone [$operator | $id] has been turned off")
+          Behaviors.stopped
+        case ReadState(requestId, replyTo) =>
+          context.log.info(s"State for drone $id is $position")
+          replyTo ! RespondState(requestId, id, Some(position))
+          flying(timers, id, operator, position, tick)
       }
     }
-}
-
-class Drone(context: ActorContext[Drone.Command], timers: TimerScheduler[Command], val id: Long, val operator: String, tick: FiniteDuration)
-    extends AbstractBehavior[Drone.Command](context) {
-  import Drone._
-
-  var position: Option[Position] = None
-
-  context.log.info(s"Drone [$operator | $id] has been created")
-
-  override def onMessage(msg: Command): Behavior[Command] = {
-    msg match {
-      case BootDrone =>
-        position = Some(Position(0, 0))
-        context.log.info(s"Drone [$operator | $id] booted")
-        this
-      case TurnOffDrone =>
-        context.log.info(s"Drone [$operator | $id] has been turned off")
-        Behaviors.stopped
-      case ReadState(requestId, replyTo) =>
-        context.log.info(s"State for drone $id is $position")
-        replyTo ! RespondState(requestId, id, position)
-        this
-      case SetPosition(requestId, position, replyTo) =>
-        this.position = Some(position)
-        context.log.info(s"Drone [$operator | $id] set position to ${position.lat} and ${position.lon}, requestId: $requestId")
-        replyTo ! PositionSet(requestId)
-        this
-    }
-  }
-
-  override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
-    case PostStop =>
-      context.log.info(s"drone [$operator | $id] has been stopped")
-      this
-  }
 }

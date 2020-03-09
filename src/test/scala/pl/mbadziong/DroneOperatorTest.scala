@@ -2,11 +2,12 @@ package pl.mbadziong
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
-import pl.mbadziong.Drone.{PositionSet, SetPosition}
+import pl.mbadziong.Drone.{Fly, PositionSet, SetPosition}
 import pl.mbadziong.DroneOperator._
 import pl.mbadziong.SimulationSupervisor.{DroneFleetCreated, InFlight, RequestFleetState, RespondFleetState}
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
+import pl.mbadziong.flight.{FlightRequest, FlightResponse}
 
 class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
@@ -65,11 +66,11 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       operatorActor ! AddDroneToFleet(2, droneAddedProbe.ref)
       val drone2Actor = droneAddedProbe.receiveMessage().drone
 
-      val positionProbe = createTestProbe[PositionSet]()
-      drone1Actor ! SetPosition(1, Position(1, 1), positionProbe.ref)
-      positionProbe.expectMessage(PositionSet(requestId = 1))
-      drone2Actor ! SetPosition(2, Position(2, 2), positionProbe.ref)
-      positionProbe.expectMessage(PositionSet(requestId = 2))
+      val flightProbe = createTestProbe[FlightResponse]()
+      drone1Actor ! Fly(FlightRequest(1, List(Position(1, 1))), flightProbe.ref)
+      flightProbe.expectMessage(FlightResponse(1))
+      drone2Actor ! Fly(FlightRequest(2, List(Position(2, 2))), flightProbe.ref)
+      flightProbe.expectMessage(FlightResponse(2))
 
       val allStateProbe = createTestProbe[RespondFleetState]()
       operatorActor ! RequestFleetState(requestId = 3, operator = "Mateusz", allStateProbe.ref)

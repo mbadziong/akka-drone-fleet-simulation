@@ -1,3 +1,3 @@
 package pl.mbadziong.flight
 
-class FlightResponse(val id: Int) {}
+case class FlightResponse(id: Int)
