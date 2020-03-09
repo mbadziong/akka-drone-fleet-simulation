@@ -22,7 +22,7 @@ object SimulationSupervisor {
   final case class RequestFleetState(requestId: Long, operator: String, replyTo: ActorRef[RespondFleetState])
       extends Command
       with DroneOperator.Command
-  final case class RespondFleetState(requestId: Long, state: Map[Long, DroneState])
+  final case class RespondFleetState(requestId: Long, state: Map[Long, DroneState])  extends DroneOperator.Command
 
   sealed trait DroneState
   final case class InFlight(position: Position) extends DroneState

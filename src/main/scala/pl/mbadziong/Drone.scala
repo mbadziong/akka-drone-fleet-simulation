@@ -51,11 +51,11 @@ object Drone {
           flightRequest.route match {
             case ::(head, tail) =>
               context.log.info(s"Drone [$operator | $id] is during flight at position $head")
-              timers.startSingleTimer(DuringFlight(new FlightRequest(flightRequest.id, tail), replyTo), tick)
+              timers.startSingleTimer(DuringFlight(FlightRequest(flightRequest.id, tail), replyTo), tick)
               flying(timers, id, operator, head, tick)
             case Nil =>
               context.log.info(s"Drone [$operator | $id] has ended flight id ${flightRequest.id}")
-              replyTo ! new FlightResponse(flightRequest.id)
+              replyTo ! FlightResponse(flightRequest.id)
               docked(timers, id, operator, position, tick)
           }
         case TurnOffDrone =>
