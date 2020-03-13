@@ -22,10 +22,10 @@ object DroneOperator {
   final case class ReplyOwnedDrones(requestId: Long, ids: Set[Long])
   final case class DroneTerminated(drone: ActorRef[Drone.Command], operatorName: String, droneId: Long) extends Command
 
-  final case class FlightCompleted(flightId: Long)                               extends Command
-  final case class FlightDenied(flightId: Long)                                  extends Command
-  final case class Fly(flightRequest: FlightRequest, replyTo: ActorRef[Command]) extends Command
-  final case class WrappedFlightResponse(flightResponse: FlightResponse)         extends Command
+  final case class FlightCompleted(flightId: Long)                                     extends Command
+  final case class FlightDenied(flightId: Long)                                        extends Command
+  final case class HandleFly(flightRequest: FlightRequest, replyTo: ActorRef[Command]) extends Command
+  final case class WrappedFlightResponse(flightResponse: FlightResponse)               extends Command
 }
 
 class DroneOperator(context: ActorContext[DroneOperator.Command], val name: String, val airport: Airport)
@@ -89,9 +89,9 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
       } else {
         Behaviors.unhandled
       }
-    case Fly(flightRequest, replyTo) =>
-      flightIdToActor += flightRequest.id.toLong   -> replyTo
-      flightIdToRequest += flightRequest.id.toLong -> flightRequest
+    case HandleFly(flightRequest, replyTo) =>
+      flightIdToActor += flightRequest.id   -> replyTo
+      flightIdToRequest += flightRequest.id -> flightRequest
       context.spawnAnonymous(FleetStateQuery(droneIdToActor, airport, flightRequest.id, context.self, 3.seconds))
       this
     case RespondFleetState(requestId, state) =>
@@ -101,9 +101,8 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
         case Some(entry) =>
           context.log.info(s"Drone ${entry._1} of operator $name will handle fly request $requestId")
           val droneRef      = droneIdToActor(entry._1)
-          val flightRequest = flightIdToRequest(entry._1)
+          val flightRequest = flightIdToRequest(requestId)
           droneRef ! Drone.Fly(flightRequest, flightResponseAdapter)
-          flightIdToActor -= requestId
           this
         case None =>
           context.log.info(s"Operator $name does not have any drone able to handle fly request $requestId")
@@ -112,8 +111,9 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
     case WrappedFlightResponse(flightResponse) =>
       val flightId = flightResponse.id
       context.log.info(s"Flight $flightId completed")
-      val replyTo  = flightIdToActor(flightId)
+      val replyTo = flightIdToActor(flightId)
       replyTo ! FlightCompleted(flightId)
+      flightIdToActor -= flightId
       this
   }
 

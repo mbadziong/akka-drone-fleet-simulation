@@ -2,7 +2,7 @@ package pl.mbadziong
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
-import pl.mbadziong.Drone.{Fly, PositionSet, SetPosition}
+import pl.mbadziong.Drone.Fly
 import pl.mbadziong.DroneOperator._
 import pl.mbadziong.SimulationSupervisor.{DroneFleetCreated, InFlight, RequestFleetState, RespondFleetState}
 import pl.mbadziong.airport.Airport
@@ -85,11 +85,15 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "be able to handle flight request by one of owned drones" in {
       val droneAddedProbe = createTestProbe[DroneAddedToFleet]()
       val operatorActor   = spawn(DroneOperator("Mateusz", Airport(Position(0.0, 0.0))))
+      val flightId        = 5L
 
       operatorActor ! AddDroneToFleet(1, droneAddedProbe.ref)
-      val drone1Actor = droneAddedProbe.receiveMessage().drone
+      val drone1Actor       = droneAddedProbe.receiveMessage().drone
+      val flightStatusProbe = createTestProbe[Command]()
 
+      operatorActor ! HandleFly(FlightRequest(flightId, List(Position(1, 1))), flightStatusProbe.ref)
 
+      flightStatusProbe.expectMessage(FlightCompleted(flightId))
     }
   }
 }
