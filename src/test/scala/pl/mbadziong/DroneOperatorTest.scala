@@ -86,9 +86,17 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val droneAddedProbe = createTestProbe[DroneAddedToFleet]()
       val operatorActor   = spawn(DroneOperator("Mateusz", Airport(Position(0.0, 0.0))))
       val flightId        = 5L
+      val longRoute = List.from(1 to 100 map { i =>
+        Position(i, i)
+      })
 
       operatorActor ! AddDroneToFleet(1, droneAddedProbe.ref)
-      val drone1Actor       = droneAddedProbe.receiveMessage().drone
+      // this drone will be busy doing flight with a lot of points
+      val busyDrone = droneAddedProbe.receiveMessage().drone
+      // this drone will be free and should handle flight request
+      operatorActor ! AddDroneToFleet(2, droneAddedProbe.ref)
+      val ignoredFlightProbe = createTestProbe[FlightResponse]()
+      busyDrone ! Fly(FlightRequest(flightId, longRoute), ignoredFlightProbe.ref)
       val flightStatusProbe = createTestProbe[Command]()
 
       operatorActor ! HandleFly(FlightRequest(flightId, List(Position(1, 1))), flightStatusProbe.ref)

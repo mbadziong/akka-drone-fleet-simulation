@@ -103,11 +103,11 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
           val droneRef      = droneIdToActor(entry._1)
           val flightRequest = flightIdToRequest(requestId)
           droneRef ! Drone.Fly(flightRequest, flightResponseAdapter)
-          this
         case None =>
           context.log.info(s"Operator $name does not have any drone able to handle fly request $requestId")
-          this
       }
+      flightIdToRequest -= requestId
+      this
     case WrappedFlightResponse(flightResponse) =>
       val flightId = flightResponse.id
       context.log.info(s"Flight $flightId completed")
