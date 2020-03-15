@@ -38,6 +38,7 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
   private var droneIdToActor    = Map.empty[Long, ActorRef[Drone.Command]]
   private var flightIdToActor   = Map.empty[Long, ActorRef[DroneOperator.Command]]
   private var flightIdToRequest = Map.empty[Long, FlightRequest]
+  private var nextDroneId       = 0
 
   context.log.info(s"drone operator $name with airport $airport created")
 
@@ -45,7 +46,9 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
     case PrepareDroneFleet(dronesCount, replyTo) =>
       context.log.info(s"Initializing $dronesCount drones for operator $name")
       (1 to dronesCount) map (
-          droneNum => {
+          _ => {
+            val droneNum = nextDroneId
+            nextDroneId = nextDroneId + 1
             val droneActor = context.spawn(Drone(droneNum, name), s"drone-$droneNum")
             context.watchWith(droneActor, DroneTerminated(droneActor, name, droneNum))
             droneIdToActor += droneNum.toLong -> droneActor
