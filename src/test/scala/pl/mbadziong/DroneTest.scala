@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
 import pl.mbadziong.Drone.RespondState
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightRequest, FlightResponse}
+import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
 
 class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
@@ -15,12 +15,12 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val flightId      = 2
       val probe         = createTestProbe[FlightResponse]()
       val droneActor    = spawn(Drone(droneId, "test"))
-      val flightRequest = new FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
+      val flightRequest = FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
 
       droneActor ! Drone.Fly(flightRequest, probe.ref)
       val response = probe.receiveMessage
 
-      response.id should ===(flightId)
+      response should be(FlightCompleted(flightId))
     }
 
     "have initial state of 0 lat and 0 lon after booting up" in {
@@ -44,7 +44,7 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val flightId      = 2
       val probe         = createTestProbe[FlightResponse]()
       val droneActor    = spawn(Drone(droneId, "test"))
-      val flightRequest = new FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
+      val flightRequest = FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
 
       droneActor ! Drone.Fly(flightRequest, probe.ref)
       probe.receiveMessage

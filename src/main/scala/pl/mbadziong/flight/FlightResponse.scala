@@ -1,3 +1,5 @@
 package pl.mbadziong.flight
 
-case class FlightResponse(id: Long)
+sealed trait FlightResponse
+final case class FlightCompleted(flightId: Long)               extends FlightResponse
+final case class FlightDenied(flightId: Long, message: String) extends FlightResponse

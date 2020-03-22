@@ -3,14 +3,20 @@ package pl.mbadziong
 import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.scaladsl.adapter._
+import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
+import pl.mbadziong.drone.Position
+import pl.mbadziong.flight.FlightRequest
 
 import scala.concurrent.duration._
 
 class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
+
+  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+  import FlightRequestJsonSupport._
 
   lazy val testKit                                   = ActorTestKit()
   implicit def typedSystem                           = testKit.system
@@ -61,6 +67,21 @@ class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with
 
         entityAs[String] should ===(
           "HashMap(0 -> ReadyToFlight, 1 -> ReadyToFlight, 2 -> ReadyToFlight, 3 -> ReadyToFlight, 4 -> ReadyToFlight)")
+      }
+    }
+
+    "be able to send flight request (POST /operator/{name}/flight)" in {
+      val operatorName  = "test"
+      val flightRequest = FlightRequest(1, List(Position(1.0, 1.0), Position(1.0, 2.0)))
+      val requestEntity = Marshal(flightRequest).to[MessageEntity].futureValue
+      val request       = Post(s"/operator/$operatorName/flight").withEntity(requestEntity)
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.Accepted)
+
+        contentType should ===(ContentTypes.`text/plain(UTF-8)`)
+
+        entityAs[String] should ===(s"done, flight request handled by $operatorName")
       }
     }
   }

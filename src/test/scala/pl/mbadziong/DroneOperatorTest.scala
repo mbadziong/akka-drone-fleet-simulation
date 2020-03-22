@@ -4,10 +4,10 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
 import pl.mbadziong.Drone.Fly
 import pl.mbadziong.DroneOperator._
-import pl.mbadziong.SimulationSupervisor.{DroneFleetCreated, InFlight, RequestFleetState, RespondFleetState}
+import pl.mbadziong.SimulationSupervisor.{DroneFleetCreated, HandleFlightResponse, InFlight, RequestFleetState, RespondFleetState}
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightRequest, FlightResponse}
+import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
 
 class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
@@ -23,7 +23,7 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       createDroneOperatorProbe.expectMessageType[DroneFleetCreated]
 
       droneOperatorActor ! RequestOwnedDrones(1L, "Mateusz", createdDronesProbe.ref)
-      createdDronesProbe.expectMessage(ReplyOwnedDrones(1L, Set(1, 2, 3, 4, 5)))
+      createdDronesProbe.expectMessage(ReplyOwnedDrones(1L, Set(0, 1, 2, 3, 4)))
     }
 
     "be able to ignore requests for wrong operator" in {
@@ -46,14 +46,14 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       droneOperatorActor ! PrepareDroneFleet(droneCount, probe.ref)
       val response        = probe.receiveMessage()
-      val firstActorDrone = response.droneActors(1)
+      val firstActorDrone = response.droneActors(0)
       firstActorDrone ! Drone.TurnOffDrone
       probe.expectTerminated(firstActorDrone, probe.remainingOrDefault)
 
       val ownedDronesProbe = createTestProbe[ReplyOwnedDrones]()
       droneOperatorActor ! RequestOwnedDrones(1L, "Mateusz", ownedDronesProbe.ref)
 
-      ownedDronesProbe.expectMessage(ReplyOwnedDrones(1L, Set(2, 3, 4, 5)))
+      ownedDronesProbe.expectMessage(ReplyOwnedDrones(1L, Set(1, 2, 3, 4)))
     }
 
     "be able to collect state of all owned drones" in {
@@ -68,9 +68,9 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       val flightProbe = createTestProbe[FlightResponse]()
       drone1Actor ! Fly(FlightRequest(1, List(Position(1, 1))), flightProbe.ref)
-      flightProbe.expectMessage(FlightResponse(1))
+      flightProbe.expectMessage(FlightCompleted(1))
       drone2Actor ! Fly(FlightRequest(2, List(Position(2, 2))), flightProbe.ref)
-      flightProbe.expectMessage(FlightResponse(2))
+      flightProbe.expectMessage(FlightCompleted(2))
 
       val allStateProbe = createTestProbe[RespondFleetState]()
       operatorActor ! RequestFleetState(requestId = 3, operator = "Mateusz", allStateProbe.ref)
@@ -97,11 +97,11 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       operatorActor ! AddDroneToFleet(2, droneAddedProbe.ref)
       val ignoredFlightProbe = createTestProbe[FlightResponse]()
       busyDrone ! Fly(FlightRequest(flightId, longRoute), ignoredFlightProbe.ref)
-      val flightStatusProbe = createTestProbe[Command]()
+      val flightStatusProbe = createTestProbe[HandleFlightResponse]()
 
       operatorActor ! HandleFly(FlightRequest(flightId, List(Position(1, 1))), flightStatusProbe.ref)
 
-      flightStatusProbe.expectMessage(FlightCompleted(flightId))
+      flightStatusProbe.expectMessage(HandleFlightResponse(FlightCompleted(flightId)))
     }
   }
 }

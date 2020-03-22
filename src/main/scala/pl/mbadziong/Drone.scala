@@ -3,7 +3,7 @@ package pl.mbadziong
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightRequest, FlightResponse}
+import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
 
 import scala.concurrent.duration._
 
@@ -55,7 +55,7 @@ object Drone {
               flying(timers, id, operator, head, tick)
             case Nil =>
               context.log.info(s"Drone [$operator | $id] has ended flight id ${flightRequest.id}")
-              replyTo ! FlightResponse(flightRequest.id)
+              replyTo ! FlightCompleted(flightRequest.id)
               docked(timers, id, operator, position, tick)
           }
         case TurnOffDrone =>

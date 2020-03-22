@@ -2,9 +2,10 @@ package pl.mbadziong
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import pl.mbadziong.DroneOperator.PrepareDroneFleet
+import pl.mbadziong.DroneOperator.{HandleFly, PrepareDroneFleet}
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
+import pl.mbadziong.flight.{FlightDenied, FlightRequest, FlightResponse}
 
 object SimulationSupervisor {
   def apply(): Behavior[Command] =
@@ -18,6 +19,10 @@ object SimulationSupervisor {
   final case class OperatorTerminated(operator: String)                                           extends Command
   final case class RequestFleet(requestId: Long, operator: String, replyTo: ActorRef[ReplyFleet]) extends Command with DroneOperator.Command
   final case class ReplyFleet(requestId: Long, ids: Set[String])
+  final case class HandleFlightRequest(flightRequest: FlightRequest, operator: String, replyTo: ActorRef[HandleFlightResponse])
+      extends Command
+  final case class HandleFlightResponse(flightResponse: FlightResponse)
+  final case class FlightRequestResult(flightResponse: FlightResponse) extends Command
   final case class RequestFleetState(requestId: Long, operator: String, replyTo: ActorRef[RespondFleetState])
       extends Command
       with DroneOperator.Command
@@ -55,6 +60,14 @@ object SimulationSupervisor {
               ref ! req
             case None =>
               replyTo ! RespondFleetState(requestId, Map.empty)
+          }
+          supervisor(operatorNameToActor)
+        case HandleFlightRequest(flightRequest, operator, replyTo) =>
+          operatorNameToActor.get(operator) match {
+            case Some(ref) =>
+              ref ! HandleFly(flightRequest, replyTo)
+            case None =>
+              replyTo ! HandleFlightResponse(FlightDenied(flightRequest.id, "operator not found"))
           }
           supervisor(operatorNameToActor)
         case OperatorTerminated(operatorName) =>
