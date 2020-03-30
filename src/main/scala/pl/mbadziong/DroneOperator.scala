@@ -17,9 +17,11 @@ object DroneOperator {
   final case class PrepareDroneFleet(dronesCount: Int, replyTo: ActorRef[DroneFleetCreated]) extends Command
   final case class AddDroneToFleet(droneId: Long, replyTo: ActorRef[DroneAddedToFleet])      extends Command
   final case class DroneAddedToFleet(drone: ActorRef[Drone.Command])
-  final case class StopDroneFleet()                                                                               extends Command
-  final case class RequestOwnedDrones(requestId: Long, operatorName: String, replyTo: ActorRef[ReplyOwnedDrones]) extends Command
-  final case class ReplyOwnedDrones(requestId: Long, ids: Set[Long])
+  final case class StopDroneFleet() extends Command
+  final case class RequestFleet(requestId: Long, operator: String, replyTo: ActorRef[ReplyFleet])
+      extends Command
+      with SimulationSupervisor.Command
+  final case class ReplyFleet(requestId: Long, ids: Set[Long])
   final case class DroneTerminated(drone: ActorRef[Drone.Command], operatorName: String, droneId: Long) extends Command
   final case class HandleFly(flightRequest: FlightRequest, replyTo: ActorRef[HandleFlightResponse])     extends Command
   final case class WrappedFlightResponse(flightResponse: FlightResponse)                                extends Command
@@ -46,7 +48,7 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
           _ => {
             val droneNum = nextDroneId
             nextDroneId = nextDroneId + 1
-            val droneActor = context.spawn(Drone(droneNum, name), s"drone-$droneNum")
+            val droneActor = context.spawn(Drone(droneNum, name, airport), s"drone-$droneNum")
             context.watchWith(droneActor, DroneTerminated(droneActor, name, droneNum))
             droneIdToActor += droneNum.toLong -> droneActor
             droneActor
@@ -62,7 +64,7 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
           replyTo ! DroneAddedToFleet(droneActor)
         case None =>
           context.log.info(s"Drone $droneId has been assigned to operator $name")
-          val droneActor = context.spawn(Drone(droneId, name), s"drone-$droneId")
+          val droneActor = context.spawn(Drone(droneId, name, airport), s"drone-$droneId")
           context.watchWith(droneActor, DroneTerminated(droneActor, name, droneId))
           droneIdToActor += droneId -> droneActor
           replyTo ! DroneAddedToFleet(droneActor)
@@ -74,10 +76,10 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
       this
     case StopDroneFleet() =>
       Behaviors.stopped
-    case RequestOwnedDrones(requestId, operatorName, replyTo) =>
+    case RequestFleet(requestId, operatorName, replyTo) =>
       if (operatorName == name) {
         context.log.info(s"Operator $name owns $droneIdToActor")
-        replyTo ! ReplyOwnedDrones(requestId, droneIdToActor.keySet)
+        replyTo ! ReplyFleet(requestId, droneIdToActor.keySet)
         this
       } else {
         Behaviors.unhandled

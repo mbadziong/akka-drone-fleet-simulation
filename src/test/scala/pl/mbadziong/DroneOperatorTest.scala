@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
 import pl.mbadziong.Drone.Fly
 import pl.mbadziong.DroneOperator._
-import pl.mbadziong.SimulationSupervisor.{DroneFleetCreated, HandleFlightResponse, InFlight, RequestFleetState, RespondFleetState}
+import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
 import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
@@ -16,26 +16,26 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "be able to list all owned drones" in {
       val droneCount               = 5
       val droneOperatorActor       = spawn(DroneOperator("Mateusz", Airport(Position(0.0, 0.0))))
-      val createdDronesProbe       = createTestProbe[ReplyOwnedDrones]()
+      val createdDronesProbe       = createTestProbe[ReplyFleet]()
       val createDroneOperatorProbe = createTestProbe[DroneFleetCreated]()
 
       droneOperatorActor ! PrepareDroneFleet(droneCount, createDroneOperatorProbe.ref)
       createDroneOperatorProbe.expectMessageType[DroneFleetCreated]
 
-      droneOperatorActor ! RequestOwnedDrones(1L, "Mateusz", createdDronesProbe.ref)
-      createdDronesProbe.expectMessage(ReplyOwnedDrones(1L, Set(0, 1, 2, 3, 4)))
+      droneOperatorActor ! RequestFleet(1L, "Mateusz", createdDronesProbe.ref)
+      createdDronesProbe.expectMessage(ReplyFleet(1L, Set(0, 1, 2, 3, 4)))
     }
 
     "be able to ignore requests for wrong operator" in {
       val droneCount               = 5
       val droneOperatorActor       = spawn(DroneOperator("Mateusz", Airport(Position(0.0, 0.0))))
-      val createdDronesProbe       = createTestProbe[ReplyOwnedDrones]()
+      val createdDronesProbe       = createTestProbe[ReplyFleet]()
       val createDroneOperatorProbe = createTestProbe[DroneFleetCreated]()
 
       droneOperatorActor ! PrepareDroneFleet(droneCount, createDroneOperatorProbe.ref)
       createDroneOperatorProbe.expectMessageType[DroneFleetCreated]
 
-      droneOperatorActor ! RequestOwnedDrones(1L, "Test", createdDronesProbe.ref)
+      droneOperatorActor ! RequestFleet(1L, "Test", createdDronesProbe.ref)
       createdDronesProbe.expectNoMessage()
     }
 
@@ -50,10 +50,10 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       firstActorDrone ! Drone.TurnOffDrone
       probe.expectTerminated(firstActorDrone, probe.remainingOrDefault)
 
-      val ownedDronesProbe = createTestProbe[ReplyOwnedDrones]()
-      droneOperatorActor ! RequestOwnedDrones(1L, "Mateusz", ownedDronesProbe.ref)
+      val ownedDronesProbe = createTestProbe[ReplyFleet]()
+      droneOperatorActor ! RequestFleet(1L, "Mateusz", ownedDronesProbe.ref)
 
-      ownedDronesProbe.expectMessage(ReplyOwnedDrones(1L, Set(1, 2, 3, 4)))
+      ownedDronesProbe.expectMessage(ReplyFleet(1L, Set(1, 2, 3, 4)))
     }
 
     "be able to collect state of all owned drones" in {

@@ -2,7 +2,7 @@ package pl.mbadziong
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import pl.mbadziong.DroneOperator.{HandleFly, PrepareDroneFleet}
+import pl.mbadziong.DroneOperator.{HandleFly, PrepareDroneFleet, ReplyFleet, RequestFleet}
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
 import pl.mbadziong.flight.{FlightDenied, FlightRequest, FlightResponse}
@@ -11,14 +11,12 @@ object SimulationSupervisor {
   def apply(): Behavior[Command] =
     supervisor(Map.empty)
 
-  sealed trait Command
+  trait Command
   final case class CreateDroneOperator(name: String, airport: Airport, replyTo: ActorRef[CreatedDroneOperator]) extends Command
   final case class CreatedDroneOperator(droneOperator: ActorRef[DroneOperator.Command])
   final case class GenerateDrones(name: String, count: Int, replyTo: ActorRef[DroneFleetCreated]) extends Command
   final case class DroneFleetCreated(droneActors: Map[Long, ActorRef[Drone.Command]])             extends Command
   final case class OperatorTerminated(operator: String)                                           extends Command
-  final case class RequestFleet(requestId: Long, operator: String, replyTo: ActorRef[ReplyFleet]) extends Command with DroneOperator.Command
-  final case class ReplyFleet(requestId: Long, ids: Set[String])
   final case class HandleFlightRequest(flightRequest: FlightRequest, operator: String, replyTo: ActorRef[HandleFlightResponse])
       extends Command
   final case class HandleFlightResponse(flightResponse: FlightResponse)

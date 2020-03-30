@@ -2,6 +2,7 @@ package pl.mbadziong
 
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
+import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
 import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
 
@@ -9,9 +10,12 @@ import scala.concurrent.duration._
 
 object Drone {
 
-  def apply(droneId: Long, operator: String, tick: FiniteDuration = 1.millis): Behavior[Command] =
+  def apply(droneId: Long,
+            operator: String,
+            airport: Airport = Airport(Position(0, 0)),
+            tick: FiniteDuration = 1.millis): Behavior[Command] =
     Behaviors.withTimers { timers =>
-      docked(timers, droneId, operator, Position(0, 0), tick)
+      docked(timers, droneId, operator, airport.position, tick)
     }
 
   sealed trait Command
