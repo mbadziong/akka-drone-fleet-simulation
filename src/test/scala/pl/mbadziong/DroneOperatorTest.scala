@@ -7,7 +7,7 @@ import pl.mbadziong.DroneOperator._
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
+import pl.mbadziong.flight.{FlightCompleted, Flight, FlightResponse}
 
 class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
@@ -67,9 +67,9 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val drone2Actor = droneAddedProbe.receiveMessage().drone
 
       val flightProbe = createTestProbe[FlightResponse]()
-      drone1Actor ! Fly(FlightRequest(1, List(Position(1, 1))), flightProbe.ref)
+      drone1Actor ! Fly(Flight(1, List(Position(1, 1))), flightProbe.ref)
       flightProbe.expectMessage(FlightCompleted(1))
-      drone2Actor ! Fly(FlightRequest(2, List(Position(2, 2))), flightProbe.ref)
+      drone2Actor ! Fly(Flight(2, List(Position(2, 2))), flightProbe.ref)
       flightProbe.expectMessage(FlightCompleted(2))
 
       val allStateProbe = createTestProbe[RespondFleetState]()
@@ -82,7 +82,7 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       )
     }
 
-    "be able to handle flight request by one of owned drones" in {
+    "be able to handle flight by one of owned drones" in {
       val droneAddedProbe = createTestProbe[DroneAddedToFleet]()
       val operatorActor   = spawn(DroneOperator("Mateusz", Airport(Position(0.0, 0.0))))
       val flightId        = 5L
@@ -96,10 +96,10 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       // this drone will be free and should handle flight request
       operatorActor ! AddDroneToFleet(2, droneAddedProbe.ref)
       val ignoredFlightProbe = createTestProbe[FlightResponse]()
-      busyDrone ! Fly(FlightRequest(flightId, longRoute), ignoredFlightProbe.ref)
+      busyDrone ! Fly(Flight(flightId, longRoute), ignoredFlightProbe.ref)
       val flightStatusProbe = createTestProbe[HandleFlightResponse]()
 
-      operatorActor ! HandleFly(FlightRequest(flightId, List(Position(1, 1))), flightStatusProbe.ref)
+      operatorActor ! HandleFly(Flight(flightId, List(Position(1, 1))), flightStatusProbe.ref)
 
       flightStatusProbe.expectMessage(HandleFlightResponse(FlightCompleted(flightId)))
     }
