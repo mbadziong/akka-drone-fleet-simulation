@@ -3,6 +3,7 @@ package pl.mbadziong
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
 import pl.mbadziong.Drone.RespondState
+import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
 import pl.mbadziong.flight.{FlightCompleted, FlightRequest, FlightResponse}
 
@@ -14,7 +15,8 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val droneId       = 1
       val flightId      = 2
       val probe         = createTestProbe[FlightResponse]()
-      val droneActor    = spawn(Drone(droneId, "test"))
+      val airport       = Airport(Position(0, 0))
+      val droneActor    = spawn(Drone(droneId, "test", airport))
       val flightRequest = FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
 
       droneActor ! Drone.Fly(flightRequest, probe.ref)
@@ -27,7 +29,8 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val droneId    = 1
       val requestId  = 2
       val probe      = createTestProbe[RespondState]()
-      val droneActor = spawn(Drone(droneId, "test"))
+      val airport    = Airport(Position(0, 0))
+      val droneActor = spawn(Drone(droneId, "test", airport))
 
       droneActor ! Drone.BootDrone
       probe.expectNoMessage()
@@ -43,7 +46,8 @@ class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val droneId       = 1
       val flightId      = 2
       val probe         = createTestProbe[FlightResponse]()
-      val droneActor    = spawn(Drone(droneId, "test"))
+      val airport       = Airport(Position(0, 0))
+      val droneActor    = spawn(Drone(droneId, "test", airport))
       val flightRequest = FlightRequest(flightId, List(Position(1.0, 1.0), Position(1.0, 2.0), Position(1.0, 3.0)))
 
       droneActor ! Drone.Fly(flightRequest, probe.ref)

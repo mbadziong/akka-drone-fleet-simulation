@@ -10,10 +10,7 @@ import scala.concurrent.duration._
 
 object Drone {
 
-  def apply(droneId: Long,
-            operator: String,
-            airport: Airport = Airport(Position(0, 0)),
-            tick: FiniteDuration = 1.millis): Behavior[Command] =
+  def apply(droneId: Long, operator: String, airport: Airport, tick: FiniteDuration = 1.millis): Behavior[Command] =
     Behaviors.withTimers { timers =>
       docked(timers, droneId, operator, airport.position, tick)
     }
