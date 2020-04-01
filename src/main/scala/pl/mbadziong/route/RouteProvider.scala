@@ -2,12 +2,13 @@ package pl.mbadziong.route
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
+import pl.mbadziong.DroneOperator
 import pl.mbadziong.drone.Position
 
 object RouteProvider {
   sealed trait Command
   final case class RouteRequest(requestId: Long, from: Position, to: Position, mps: Int, replyTo: ActorRef[RouteResponse]) extends Command
-  final case class RouteResponse(requestId: Long, route: List[Position])
+  final case class RouteResponse(requestId: Long, route: List[Position])                                                   extends DroneOperator.Command
 
   def apply(): Behavior[Command] = routeProvider()
 

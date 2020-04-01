@@ -4,7 +4,9 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.flight.{Flight, FlightCompleted, FlightDenied, FlightRequest, FlightResponse}
+import pl.mbadziong.flight._
+import pl.mbadziong.route.RouteProvider
+import pl.mbadziong.route.RouteProvider.{RouteRequest, RouteResponse}
 
 import scala.concurrent.duration._
 
@@ -34,10 +36,11 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
 
   private val flightResponseAdapter = context.messageAdapter(WrappedFlightResponse.apply)
 
-  private var droneIdToActor  = Map.empty[Long, ActorRef[Drone.Command]]
-  private var flightIdToActor = Map.empty[Long, ActorRef[HandleFlightResponse]]
-  private var idToFlight      = Map.empty[Long, Flight] //TODO: change to list
-  private var nextDroneId     = 0
+  private var droneIdToActor    = Map.empty[Long, ActorRef[Drone.Command]]
+  private var flightIdToActor   = Map.empty[Long, ActorRef[HandleFlightResponse]]
+  private var idToFlightRequest = Map.empty[Long, FlightRequest] //TODO: change to list
+  private var flightIdToDrone   = Map.empty[Long, ActorRef[Drone.Command]]
+  private var nextDroneId       = 0
 
   context.log.info(s"drone operator $name with airport $airport created")
 
@@ -92,10 +95,8 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
         Behaviors.unhandled
       }
     case HandleFly(flightRequest, replyTo) =>
-      //TODO: create flight from flightrequest
-      val flight = Flight(flightRequest.id, List(airport.position, flightRequest.destination, airport.position))
-      flightIdToActor += flightRequest.id -> replyTo
-      idToFlight += flightRequest.id      -> flight
+      flightIdToActor += flightRequest.id   -> replyTo
+      idToFlightRequest += flightRequest.id -> flightRequest
       context.spawnAnonymous(FleetStateQuery(droneIdToActor, airport, flightRequest.id, context.self, 3.seconds))
       this
     case RespondFleetState(requestId, state) =>
@@ -104,13 +105,21 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
       } match {
         case Some(entry) =>
           context.log.info(s"Drone ${entry._1} of operator $name will handle fly request $requestId")
-          val droneRef      = droneIdToActor(entry._1)
-          val flightRequest = idToFlight(requestId)
-          droneRef ! Drone.Fly(flightRequest, flightResponseAdapter)
+          flightIdToDrone += requestId -> droneIdToActor(entry._1)
+          val flightRequest = idToFlightRequest(requestId)
+          val routeProvider = context.spawnAnonymous(RouteProvider())
+          routeProvider ! RouteRequest(requestId, airport.position, flightRequest.destination, 10, context.self)
         case None =>
+          flightIdToActor -= requestId
           context.log.info(s"Operator $name does not have any drone able to handle fly request $requestId")
       }
-      idToFlight -= requestId
+      this
+    case RouteResponse(requestId, route) =>
+      val droneRef = flightIdToDrone(requestId)
+      val flight   = Flight(requestId, route)
+      flightIdToDrone -= requestId
+      idToFlightRequest -= requestId
+      droneRef ! Drone.Fly(flight, flightResponseAdapter)
       this
     case WrappedFlightResponse(flightResponse) =>
       flightResponse match {

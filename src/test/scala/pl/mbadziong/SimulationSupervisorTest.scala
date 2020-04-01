@@ -89,7 +89,7 @@ class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpe
       val createdDroneOperatorProbe = createTestProbe[CreatedDroneOperator]()
       val supervisorActor           = spawn(SimulationSupervisor())
       val operatorName              = "test"
-      val airport                   = Airport(Position(1, 1))
+      val airport                   = Airport(Position(54.406001, 18.575956))
 
       supervisorActor ! CreateDroneOperator(operatorName, airport, createdDroneOperatorProbe.ref)
       createdDroneOperatorProbe.expectMessageType[CreatedDroneOperator]
@@ -99,7 +99,7 @@ class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpe
       droneFleetCreatedProbe.expectMessageType[DroneFleetCreated]
 
       val handleFlightResponseProbe = createTestProbe[HandleFlightResponse]()
-      supervisorActor ! HandleFlightRequest(FlightRequest(1L, Position(2, 2)), operatorName, handleFlightResponseProbe.ref)
+      supervisorActor ! HandleFlightRequest(FlightRequest(1L, Position(54.406335, 18.581467)), operatorName, handleFlightResponseProbe.ref)
       handleFlightResponseProbe.expectMessage(HandleFlightResponse(FlightCompleted(1)))
     }
   }
