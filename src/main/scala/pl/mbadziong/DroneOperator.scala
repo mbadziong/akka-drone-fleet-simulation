@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.flight.{Flight, FlightCompleted, FlightDenied, FlightResponse}
+import pl.mbadziong.flight.{Flight, FlightCompleted, FlightDenied, FlightRequest, FlightResponse}
 
 import scala.concurrent.duration._
 
@@ -23,7 +23,7 @@ object DroneOperator {
       with SimulationSupervisor.Command
   final case class ReplyFleet(requestId: Long, ids: Set[Long])
   final case class DroneTerminated(drone: ActorRef[Drone.Command], operatorName: String, droneId: Long) extends Command
-  final case class HandleFly(flight: Flight, replyTo: ActorRef[HandleFlightResponse])                   extends Command
+  final case class HandleFly(flight: FlightRequest, replyTo: ActorRef[HandleFlightResponse])            extends Command
   final case class WrappedFlightResponse(flightResponse: FlightResponse)                                extends Command
 }
 
@@ -92,8 +92,10 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
         Behaviors.unhandled
       }
     case HandleFly(flightRequest, replyTo) =>
+      //TODO: create flight from flightrequest
+      val flight = Flight(flightRequest.id, List(airport.position, flightRequest.destination, airport.position))
       flightIdToActor += flightRequest.id -> replyTo
-      idToFlight += flightRequest.id      -> flightRequest
+      idToFlight += flightRequest.id      -> flight
       context.spawnAnonymous(FleetStateQuery(droneIdToActor, airport, flightRequest.id, context.self, 3.seconds))
       this
     case RespondFleetState(requestId, state) =>

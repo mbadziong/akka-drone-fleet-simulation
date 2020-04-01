@@ -7,7 +7,7 @@ import pl.mbadziong.DroneOperator._
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightCompleted, Flight, FlightResponse}
+import pl.mbadziong.flight.{Flight, FlightCompleted, FlightRequest, FlightResponse}
 
 class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
@@ -99,7 +99,7 @@ class DroneOperatorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       busyDrone ! Fly(Flight(flightId, longRoute), ignoredFlightProbe.ref)
       val flightStatusProbe = createTestProbe[HandleFlightResponse]()
 
-      operatorActor ! HandleFly(Flight(flightId, List(Position(1, 1))), flightStatusProbe.ref)
+      operatorActor ! HandleFly(FlightRequest(flightId, Position(1, 1)), flightStatusProbe.ref)
 
       flightStatusProbe.expectMessage(HandleFlightResponse(FlightCompleted(flightId)))
     }

@@ -15,8 +15,8 @@ import scala.concurrent.duration._
 
 class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
-  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
   import FlightRequestJsonSupport._
+  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 
   lazy val testKit                                   = ActorTestKit()
   implicit def typedSystem                           = testKit.system
@@ -72,7 +72,7 @@ class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with
 
     "be able to send flight request (POST /operator/{name}/flight)" in {
       val operatorName  = "test"
-      val flightRequest = FlightRequest(1, List(Position(1.0, 1.0), Position(1.0, 2.0)))
+      val flightRequest = FlightRequest(1, Position(1.0, 2.0))
       val requestEntity = Marshal(flightRequest).to[MessageEntity].futureValue
       val request       = Post(s"/operator/$operatorName/flight").withEntity(requestEntity)
 

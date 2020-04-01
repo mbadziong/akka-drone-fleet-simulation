@@ -99,9 +99,7 @@ class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpe
       droneFleetCreatedProbe.expectMessageType[DroneFleetCreated]
 
       val handleFlightResponseProbe = createTestProbe[HandleFlightResponse]()
-      supervisorActor ! HandleFlightRequest(FlightRequest(1L, List(Position(2, 2), Position(3, 3))),
-                                            operatorName,
-                                            handleFlightResponseProbe.ref)
+      supervisorActor ! HandleFlightRequest(FlightRequest(1L, Position(2, 2)), operatorName, handleFlightResponseProbe.ref)
       handleFlightResponseProbe.expectMessage(HandleFlightResponse(FlightCompleted(1)))
     }
   }
