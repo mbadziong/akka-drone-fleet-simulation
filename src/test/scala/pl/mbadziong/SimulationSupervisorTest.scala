@@ -4,8 +4,8 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
 import pl.mbadziong.DroneOperator.{ReplyFleet, RequestFleet}
 import pl.mbadziong.SimulationSupervisor._
-import pl.mbadziong.airport.Airport
-import pl.mbadziong.drone.Position
+import pl.mbadziong.airport.{ARKONSKA_GDANSK_AIRPORT, Airport}
+import pl.mbadziong.drone.{NEAR_GDANSK_ARKONSKA_AIRPORT, Position}
 import pl.mbadziong.flight.{FlightCompleted, FlightRequest}
 
 class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -89,7 +89,7 @@ class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpe
       val createdDroneOperatorProbe = createTestProbe[CreatedDroneOperator]()
       val supervisorActor           = spawn(SimulationSupervisor())
       val operatorName              = "test"
-      val airport                   = Airport(Position(54.406001, 18.575956))
+      val airport                   = ARKONSKA_GDANSK_AIRPORT
 
       supervisorActor ! CreateDroneOperator(operatorName, airport, createdDroneOperatorProbe.ref)
       createdDroneOperatorProbe.expectMessageType[CreatedDroneOperator]
@@ -99,7 +99,7 @@ class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpe
       droneFleetCreatedProbe.expectMessageType[DroneFleetCreated]
 
       val handleFlightResponseProbe = createTestProbe[HandleFlightResponse]()
-      supervisorActor ! HandleFlightRequest(FlightRequest(1L, Position(54.406335, 18.581467)), operatorName, handleFlightResponseProbe.ref)
+      supervisorActor ! HandleFlightRequest(FlightRequest(1L, NEAR_GDANSK_ARKONSKA_AIRPORT), operatorName, handleFlightResponseProbe.ref)
       handleFlightResponseProbe.expectMessage(HandleFlightResponse(FlightCompleted(1)))
     }
   }

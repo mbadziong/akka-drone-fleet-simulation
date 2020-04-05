@@ -8,7 +8,8 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
-import pl.mbadziong.drone.Position
+import pl.mbadziong.airport.ARKONSKA_GDANSK_AIRPORT
+import pl.mbadziong.drone.{NEAR_GDANSK_ARKONSKA_AIRPORT, Position}
 import pl.mbadziong.flight.FlightRequest
 
 import scala.concurrent.duration._
@@ -72,7 +73,7 @@ class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with
 
     "be able to send flight request (POST /operator/{name}/flight)" in {
       val operatorName  = "test"
-      val flightRequest = FlightRequest(1, Position(54.406335, 18.581467))
+      val flightRequest = FlightRequest(1, NEAR_GDANSK_ARKONSKA_AIRPORT)
       val requestEntity = Marshal(flightRequest).to[MessageEntity].futureValue
       val request       = Post(s"/operator/$operatorName/flight").withEntity(requestEntity)
 
