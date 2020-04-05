@@ -17,8 +17,9 @@ object RouteProvider {
       message match {
         case RouteRequest(requestId, from, to, mps, replyTo) =>
           val calculatedRoute = RouteCalculator.getPoints(from, to, mps)
+          val finalRoute      = calculatedRoute ++ calculatedRoute.reverse
           context.log.info(s"calculated route for request $requestId is $calculatedRoute")
-          replyTo ! RouteResponse(requestId, RouteCalculator.getPoints(from, to, mps))
+          replyTo ! RouteResponse(requestId, finalRoute)
           Behaviors.same
         case _ => Behaviors.same
       }

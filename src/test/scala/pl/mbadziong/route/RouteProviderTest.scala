@@ -13,12 +13,12 @@ class RouteProviderTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val routeProviderActor = spawn(RouteProvider())
       val routeResponseProbe = createTestProbe[RouteResponse]()
 
-      routeProviderActor ! RouteRequest(1, Position(54.4066489,18.5768217), Position(54.406056,18.572152), 10, routeResponseProbe.ref)
+      routeProviderActor ! RouteRequest(1, Position(54.4066489, 18.5768217), Position(54.406056, 18.572152), 10, routeResponseProbe.ref)
 
       val response = routeResponseProbe.receiveMessage
 
       response.requestId should ===(1)
-      response.route.size should ===(32)
+      response.route.size should ===(64)
     }
   }
 }

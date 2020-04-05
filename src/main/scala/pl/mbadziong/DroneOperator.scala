@@ -110,8 +110,9 @@ class DroneOperator(context: ActorContext[DroneOperator.Command], val name: Stri
           val routeProvider = context.spawnAnonymous(RouteProvider())
           routeProvider ! RouteRequest(requestId, airport.position, flightRequest.destination, 10, context.self)
         case None =>
-          flightIdToActor -= requestId
-          context.log.info(s"Operator $name does not have any drone able to handle fly request $requestId")
+          val msg = s"Operator $name does not have any drone able to handle fly request $requestId"
+          context.log.info(msg)
+          context.self ! WrappedFlightResponse(FlightDenied(requestId, msg))
       }
       this
     case RouteResponse(requestId, route) =>
