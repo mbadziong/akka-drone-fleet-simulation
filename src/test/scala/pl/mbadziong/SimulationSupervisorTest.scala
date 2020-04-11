@@ -6,7 +6,7 @@ import pl.mbadziong.DroneOperator.{ReplyFleet, RequestFleet}
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.{ARKONSKA_GDANSK_AIRPORT, Airport}
 import pl.mbadziong.drone.{NEAR_GDANSK_ARKONSKA_AIRPORT, Position}
-import pl.mbadziong.flight.{FlightCompleted, FlightRequest}
+import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest}
 
 class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
@@ -100,7 +100,27 @@ class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpe
 
       val handleFlightResponseProbe = createTestProbe[HandleFlightResponse]()
       supervisorActor ! HandleFlightRequest(FlightRequest(1L, NEAR_GDANSK_ARKONSKA_AIRPORT), operatorName, handleFlightResponseProbe.ref)
-      handleFlightResponseProbe.expectMessage(HandleFlightResponse(FlightCompleted(1)))
+      handleFlightResponseProbe.expectMessage(HandleFlightResponse(FlightAccepted(1)))
+    }
+
+    "Deny flight request for non existing operator" in {
+      val createdDroneOperatorProbe = createTestProbe[CreatedDroneOperator]()
+      val supervisorActor           = spawn(SimulationSupervisor())
+      val operatorName              = "test"
+      val airport                   = ARKONSKA_GDANSK_AIRPORT
+
+      supervisorActor ! CreateDroneOperator(operatorName, airport, createdDroneOperatorProbe.ref)
+      createdDroneOperatorProbe.expectMessageType[CreatedDroneOperator]
+
+      val droneFleetCreatedProbe = createTestProbe[DroneFleetCreated]()
+      supervisorActor ! GenerateDrones(operatorName, 5, droneFleetCreatedProbe.ref)
+      droneFleetCreatedProbe.expectMessageType[DroneFleetCreated]
+
+      val handleFlightResponseProbe = createTestProbe[HandleFlightResponse]()
+      supervisorActor ! HandleFlightRequest(FlightRequest(1L, NEAR_GDANSK_ARKONSKA_AIRPORT),
+                                            "otherOperatorName",
+                                            handleFlightResponseProbe.ref)
+      handleFlightResponseProbe.expectMessage(HandleFlightResponse(FlightDenied(1, "operator not found")))
     }
   }
 }

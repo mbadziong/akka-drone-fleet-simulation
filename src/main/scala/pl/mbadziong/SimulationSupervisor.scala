@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.DroneOperator.{HandleFly, PrepareDroneFleet, ReplyFleet, RequestFleet}
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightDenied, FlightRequest, FlightResponse}
+import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest, FlightResponse}
 
 object SimulationSupervisor {
   def apply(): Behavior[Command] =
@@ -63,7 +63,8 @@ object SimulationSupervisor {
         case HandleFlightRequest(flightRequest, operator, replyTo) =>
           operatorNameToActor.get(operator) match {
             case Some(ref) =>
-              ref ! HandleFly(flightRequest, replyTo)
+              ref ! HandleFly(flightRequest)
+              replyTo ! HandleFlightResponse(FlightAccepted(flightRequest.id))
             case None =>
               replyTo ! HandleFlightResponse(FlightDenied(flightRequest.id, "operator not found"))
           }

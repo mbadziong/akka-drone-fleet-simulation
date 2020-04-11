@@ -8,7 +8,7 @@ import akka.util.Timeout
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.FlightRequest
+import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest}
 
 import scala.concurrent.Future
 
@@ -47,8 +47,13 @@ class SupervisorRoutes(supervisorActor: ActorRef[SimulationSupervisor.Command])(
         path("flight") {
           post {
             entity(as[FlightRequest]) { flightRequest =>
-              onSuccess(simulateFlight(operatorName, flightRequest)) { _ =>
-                complete((StatusCodes.Accepted, s"done, flight request handled by $operatorName"))
+              onSuccess(simulateFlight(operatorName, flightRequest)) { response =>
+                response.flightResponse match {
+                  case FlightAccepted(flightId) =>
+                    complete((StatusCodes.Accepted, s"flight accepted, request handled by $operatorName, id: $flightId"))
+                  case FlightDenied(flightId, message) =>
+                    complete((StatusCodes.Accepted, s"flight denied, request handled by $operatorName, id: $flightId, msg: $message"))
+                }
               }
             }
           }

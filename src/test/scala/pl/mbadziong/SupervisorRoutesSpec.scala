@@ -73,7 +73,8 @@ class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with
 
     "be able to send flight request (POST /operator/{name}/flight)" in {
       val operatorName  = "test"
-      val flightRequest = FlightRequest(1, NEAR_GDANSK_ARKONSKA_AIRPORT)
+      val flightId      = 1
+      val flightRequest = FlightRequest(flightId, NEAR_GDANSK_ARKONSKA_AIRPORT)
       val requestEntity = Marshal(flightRequest).to[MessageEntity].futureValue
       val request       = Post(s"/operator/$operatorName/flight").withEntity(requestEntity)
 
@@ -82,7 +83,7 @@ class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with
 
         contentType should ===(ContentTypes.`text/plain(UTF-8)`)
 
-        entityAs[String] should ===(s"done, flight request handled by $operatorName")
+        entityAs[String] should ===(s"flight accepted, request handled by test, id: $flightId")
       }
     }
   }
