@@ -1,5 +1,7 @@
 package pl.mbadziong
 
+import java.util.concurrent.atomic.AtomicLong
+
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
@@ -8,7 +10,7 @@ import akka.util.Timeout
 import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest}
+import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest, FlightRequestDto}
 
 import scala.concurrent.Future
 
@@ -18,18 +20,19 @@ class SupervisorRoutes(supervisorActor: ActorRef[SimulationSupervisor.Command])(
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 
   private implicit val timeout: Timeout = Timeout.create(system.settings.config.getDuration("my-app.routes.ask-timeout"))
+  private val requestIdCounter          = new AtomicLong()
 
   def createDroneOperator(operatorName: String): Future[CreatedDroneOperator] =
     supervisorActor.ask(CreateDroneOperator(operatorName, Airport(Position(54.406001, 18.575956)), _))
 
-  def getFleetState(operatorName: String): Future[RespondFleetState] =
-    supervisorActor.ask(RequestFleetState(1, operatorName, _))
+  def getFleetState(requestId: Long, operatorName: String): Future[RespondFleetState] =
+    supervisorActor.ask(RequestFleetState(requestId, operatorName, _))
 
   def generateFleet(operatorName: String, count: Int): Future[DroneFleetCreated] =
     supervisorActor.ask(GenerateDrones(operatorName, count, _))
 
-  def simulateFlight(operatorName: String, flightRequest: FlightRequest): Future[HandleFlightResponse] =
-    supervisorActor.ask(HandleFlightRequest(flightRequest, operatorName, _))
+  def simulateFlight(operatorName: String, flightRequest: FlightRequestDto): Future[HandleFlightResponse] =
+    supervisorActor.ask(HandleFlightRequest(FlightRequest(requestIdCounter.getAndIncrement(), flightRequest.destination), operatorName, _))
 
   val supervisorRoutes: Route =
     pathPrefix("operator" / Segment) { operatorName =>
@@ -46,7 +49,7 @@ class SupervisorRoutes(supervisorActor: ActorRef[SimulationSupervisor.Command])(
       } ~
         path("flight") {
           post {
-            entity(as[FlightRequest]) { flightRequest =>
+            entity(as[FlightRequestDto]) { flightRequest =>
               onSuccess(simulateFlight(operatorName, flightRequest)) { response =>
                 response.flightResponse match {
                   case FlightAccepted(flightId) =>
@@ -67,7 +70,7 @@ class SupervisorRoutes(supervisorActor: ActorRef[SimulationSupervisor.Command])(
                 }
               },
               get {
-                onSuccess(getFleetState(operatorName)) { response =>
+                onSuccess(getFleetState(requestIdCounter.getAndIncrement(), operatorName)) { response =>
                   complete((StatusCodes.OK, response.state.toString()))
                 }
               }
