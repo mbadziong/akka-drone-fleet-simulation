@@ -1,10 +1,10 @@
-package pl.mbadziong
+package pl.mbadziong.drone
 
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.drone.Position
-import pl.mbadziong.flight.{FlightCompleted, Flight, FlightResponse}
+import pl.mbadziong.common.Position
+import pl.mbadziong.flight.{Flight, FlightCompleted, FlightResponse}
 
 import scala.concurrent.duration._
 

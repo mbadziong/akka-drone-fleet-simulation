@@ -5,6 +5,8 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
+import pl.mbadziong.http.SupervisorRoutes
+import pl.mbadziong.supervisor.SimulationSupervisor
 
 import scala.util.Failure
 import scala.util.Success

@@ -2,8 +2,8 @@ package pl.mbadziong.route
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import pl.mbadziong.DroneOperator
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
+import pl.mbadziong.operator.DroneOperator
 
 object RouteProvider {
   sealed trait Command

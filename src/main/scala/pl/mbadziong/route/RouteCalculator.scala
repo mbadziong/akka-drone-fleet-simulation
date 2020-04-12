@@ -1,6 +1,6 @@
 package pl.mbadziong.route
 
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
 
 import scala.collection.mutable.ListBuffer
 

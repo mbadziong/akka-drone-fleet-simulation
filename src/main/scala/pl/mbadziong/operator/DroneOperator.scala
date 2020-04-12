@@ -1,12 +1,15 @@
-package pl.mbadziong
+package pl.mbadziong.operator
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
+import pl.mbadziong.drone.Drone
 import pl.mbadziong.flight._
+import pl.mbadziong.query.FleetStateQuery
 import pl.mbadziong.route.RouteProvider
 import pl.mbadziong.route.RouteProvider.{RouteRequest, RouteResponse}
+import pl.mbadziong.supervisor.SimulationSupervisor
+import pl.mbadziong.supervisor.SimulationSupervisor._
 
 import scala.concurrent.duration._
 
@@ -32,7 +35,7 @@ object DroneOperator {
 class DroneOperator(context: ActorContext[DroneOperator.Command], val name: String, val airport: Airport)
     extends AbstractBehavior[DroneOperator.Command](context) {
   import DroneOperator._
-  import pl.mbadziong.Drone.BootDrone
+  import pl.mbadziong.drone.Drone.BootDrone
 
   private val flightResponseAdapter = context.messageAdapter(WrappedFlightResponse.apply)
 

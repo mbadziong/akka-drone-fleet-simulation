@@ -1,4 +1,4 @@
-package pl.mbadziong.drone
+package pl.mbadziong.common
 
 case class Position(lat: Double, lon: Double)
 

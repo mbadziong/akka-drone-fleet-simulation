@@ -1,4 +1,4 @@
-package pl.mbadziong
+package pl.mbadziong.http
 
 import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
@@ -8,15 +8,16 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
-import pl.mbadziong.drone.NEAR_GDANSK_ARKONSKA_AIRPORT
+import pl.mbadziong.common.NEAR_GDANSK_ARKONSKA_AIRPORT
 import pl.mbadziong.flight.FlightRequestDto
+import pl.mbadziong.supervisor.SimulationSupervisor
 
 import scala.concurrent.duration._
 
 class SupervisorRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
-  import FlightRequestJsonSupport._
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+  import pl.mbadziong.http.FlightRequestJsonSupport._
 
   lazy val testKit                                   = ActorTestKit()
   implicit def typedSystem                           = testKit.system

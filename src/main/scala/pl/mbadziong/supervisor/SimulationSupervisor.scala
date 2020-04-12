@@ -1,11 +1,13 @@
-package pl.mbadziong
+package pl.mbadziong.supervisor
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import pl.mbadziong.DroneOperator.{HandleFly, PrepareDroneFleet, ReplyFleet, RequestFleet}
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
+import pl.mbadziong.drone.Drone
 import pl.mbadziong.flight.{FlightDenied, FlightRequest, FlightResponse}
+import pl.mbadziong.operator.DroneOperator
+import pl.mbadziong.operator.DroneOperator.{HandleFly, PrepareDroneFleet, ReplyFleet, RequestFleet}
 
 object SimulationSupervisor {
   def apply(): Behavior[Command] =

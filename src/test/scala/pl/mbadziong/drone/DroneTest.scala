@@ -1,10 +1,10 @@
-package pl.mbadziong
+package pl.mbadziong.drone
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
-import pl.mbadziong.Drone.RespondState
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
+import pl.mbadziong.drone.Drone.RespondState
 import pl.mbadziong.flight.{Flight, FlightCompleted, FlightResponse}
 
 class DroneTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {

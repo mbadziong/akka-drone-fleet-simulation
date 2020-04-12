@@ -1,11 +1,13 @@
-package pl.mbadziong
+package pl.mbadziong.query
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
-import pl.mbadziong.Drone.RespondState
-import pl.mbadziong.SimulationSupervisor._
-import pl.mbadziong.FleetStateQuery.{CollectionTimeout, Command, DroneTerminated, WrappedRespondState}
 import pl.mbadziong.airport.Airport
+import pl.mbadziong.drone.Drone
+import pl.mbadziong.drone.Drone.RespondState
+import pl.mbadziong.query.FleetStateQuery.{CollectionTimeout, Command, DroneTerminated, WrappedRespondState}
+import pl.mbadziong.supervisor.SimulationSupervisor
+import pl.mbadziong.supervisor.SimulationSupervisor._
 
 import scala.concurrent.duration.FiniteDuration
 

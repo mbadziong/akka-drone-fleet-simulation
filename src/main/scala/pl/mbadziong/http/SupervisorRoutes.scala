@@ -1,4 +1,4 @@
-package pl.mbadziong
+package pl.mbadziong.http
 
 import java.util.concurrent.atomic.AtomicLong
 
@@ -7,10 +7,11 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.Timeout
-import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
 import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest, FlightRequestDto}
+import pl.mbadziong.supervisor.SimulationSupervisor
+import pl.mbadziong.supervisor.SimulationSupervisor._
 
 import scala.concurrent.Future
 

@@ -1,11 +1,12 @@
-package pl.mbadziong
+package pl.mbadziong.query
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
-import pl.mbadziong.SimulationSupervisor.{InFlight, LoadsBattery, ReadyToFlight, RespondFleetState, TimedOut}
-import pl.mbadziong.FleetStateQuery.WrappedRespondState
 import pl.mbadziong.airport.Airport
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
+import pl.mbadziong.drone.Drone
+import pl.mbadziong.query.FleetStateQuery.WrappedRespondState
+import pl.mbadziong.supervisor.SimulationSupervisor._
 
 import scala.concurrent.duration._
 

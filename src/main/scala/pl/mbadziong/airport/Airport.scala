@@ -1,6 +1,6 @@
 package pl.mbadziong.airport
 
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
 
 case class Airport(position: Position)
 

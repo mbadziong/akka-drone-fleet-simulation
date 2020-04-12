@@ -1,12 +1,12 @@
-package pl.mbadziong
+package pl.mbadziong.supervisor
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
-import pl.mbadziong.DroneOperator.{ReplyFleet, RequestFleet}
-import pl.mbadziong.SimulationSupervisor._
 import pl.mbadziong.airport.{ARKONSKA_GDANSK_AIRPORT, Airport}
-import pl.mbadziong.drone.{NEAR_GDANSK_ARKONSKA_AIRPORT, Position}
+import pl.mbadziong.common.{NEAR_GDANSK_ARKONSKA_AIRPORT, Position}
 import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest}
+import pl.mbadziong.operator.DroneOperator.{ReplyFleet, RequestFleet}
+import pl.mbadziong.supervisor.SimulationSupervisor._
 
 class SimulationSupervisorTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 

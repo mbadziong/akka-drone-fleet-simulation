@@ -1,6 +1,6 @@
-package pl.mbadziong
+package pl.mbadziong.http
 
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
 import pl.mbadziong.flight.FlightRequestDto
 import spray.json.DefaultJsonProtocol
 

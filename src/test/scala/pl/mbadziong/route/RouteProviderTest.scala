@@ -2,7 +2,7 @@ package pl.mbadziong.route
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.wordspec.AnyWordSpecLike
-import pl.mbadziong.drone.Position
+import pl.mbadziong.common.Position
 import pl.mbadziong.route.RouteProvider.{RouteRequest, RouteResponse}
 
 class RouteProviderTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
