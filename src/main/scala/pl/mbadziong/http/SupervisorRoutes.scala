@@ -20,7 +20,7 @@ class SupervisorRoutes(supervisorActor: ActorRef[SimulationSupervisor.Command])(
   import FlightRequestJsonSupport._
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 
-  private implicit val timeout: Timeout = Timeout.create(system.settings.config.getDuration("my-app.routes.ask-timeout"))
+  private implicit val timeout: Timeout = Timeout.create(system.settings.config.getDuration("simulator.routes.ask-timeout"))
   private val requestIdCounter          = new AtomicLong()
 
   def createDroneOperator(operatorName: String): Future[CreatedDroneOperator] =

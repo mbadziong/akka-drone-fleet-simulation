@@ -10,9 +10,12 @@ import scala.concurrent.duration._
 
 object Drone {
 
-  def apply(droneId: Long, operator: String, airport: Airport, tick: FiniteDuration = 1.millis): Behavior[Command] =
-    Behaviors.withTimers { timers =>
-      docked(timers, droneId, operator, airport.position, tick)
+  def apply(droneId: Long, operator: String, airport: Airport): Behavior[Command] =
+    Behaviors.setup { context =>
+      Behaviors.withTimers { timers =>
+        val tick = FiniteDuration(context.system.settings.config.getDuration("simulator.drone.tick").toMillis, MILLISECONDS)
+        docked(timers, droneId, operator, airport.position, tick)
+      }
     }
 
   sealed trait Command
