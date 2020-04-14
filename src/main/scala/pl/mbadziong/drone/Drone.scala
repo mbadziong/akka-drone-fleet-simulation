@@ -10,10 +10,12 @@ import scala.concurrent.duration._
 
 object Drone {
 
+  private val DRONE_TICK = "simulator.drone.tick"
+
   def apply(droneId: Long, operator: String, airport: Airport): Behavior[Command] =
     Behaviors.setup { context =>
       Behaviors.withTimers { timers =>
-        val tick = FiniteDuration(context.system.settings.config.getDuration("simulator.drone.tick").toMillis, MILLISECONDS)
+        val tick = FiniteDuration(context.system.settings.config.getDuration(DRONE_TICK).toMillis, MILLISECONDS)
         docked(timers, droneId, operator, airport.position, tick)
       }
     }
