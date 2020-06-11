@@ -42,10 +42,12 @@ object SimulationSupervisor {
           replyTo ! CreatedDroneOperator(droneOperator)
           context.watchWith(droneOperator, OperatorTerminated(name))
           supervisor(operatorNameToActor + (name -> droneOperator))
+
         case GenerateDrones(name, count, replyTo) =>
           val droneOperator = operatorNameToActor(name)
           droneOperator ! PrepareDroneFleet(count, replyTo)
           supervisor(operatorNameToActor)
+
         case req @ RequestFleet(requestId, operator, replyTo) =>
           operatorNameToActor.get(operator) match {
             case Some(ref) =>
@@ -54,6 +56,7 @@ object SimulationSupervisor {
               replyTo ! ReplyFleet(requestId, Set.empty)
           }
           supervisor(operatorNameToActor)
+
         case req @ RequestFleetState(requestId, operator, replyTo) =>
           operatorNameToActor.get(operator) match {
             case Some(ref) =>
@@ -62,6 +65,7 @@ object SimulationSupervisor {
               replyTo ! RespondFleetState(requestId, Map.empty)
           }
           supervisor(operatorNameToActor)
+
         case HandleFlightRequest(flightRequest, operator, replyTo) =>
           operatorNameToActor.get(operator) match {
             case Some(ref) =>
@@ -70,9 +74,11 @@ object SimulationSupervisor {
               replyTo ! HandleFlightResponse(FlightDenied(flightRequest.id, "operator not found"))
           }
           supervisor(operatorNameToActor)
+
         case OperatorTerminated(operatorName) =>
           context.log.info(s"Drone fleet for operator $operatorName has been terminated")
           supervisor(operatorNameToActor - operatorName)
+
         case _ => Behaviors.unhandled
       }
     }

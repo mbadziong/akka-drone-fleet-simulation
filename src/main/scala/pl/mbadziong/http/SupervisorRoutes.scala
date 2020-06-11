@@ -7,8 +7,7 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.Timeout
-import pl.mbadziong.airport.Airport
-import pl.mbadziong.common.Position
+import pl.mbadziong.airport.ARKONSKA_GDANSK_AIRPORT
 import pl.mbadziong.flight.{FlightAccepted, FlightDenied, FlightRequest, FlightRequestDto}
 import pl.mbadziong.supervisor.SimulationSupervisor
 import pl.mbadziong.supervisor.SimulationSupervisor._
@@ -24,7 +23,7 @@ class SupervisorRoutes(supervisorActor: ActorRef[SimulationSupervisor.Command])(
   private val requestIdCounter          = new AtomicLong()
 
   def createDroneOperator(operatorName: String): Future[CreatedDroneOperator] =
-    supervisorActor.ask(CreateDroneOperator(operatorName, Airport(Position(54.406001, 18.575956)), _))
+    supervisorActor.ask(CreateDroneOperator(operatorName, ARKONSKA_GDANSK_AIRPORT, _))
 
   def getFleetState(requestId: Long, operatorName: String): Future[RespondFleetState] =
     supervisorActor.ask(RequestFleetState(requestId, operatorName, _))

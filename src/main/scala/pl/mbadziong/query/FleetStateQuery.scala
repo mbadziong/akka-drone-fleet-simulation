@@ -74,9 +74,9 @@ class FleetStateQuery(droneIdToActor: Map[Long, ActorRef[Drone.Command]],
 
     context.log.info(s"onRespondState: $response")
     val droneState: DroneState = response.position match {
-      case Some(value) if value.lon == airport.position.lon && value.lat == airport.position.lat => ReadyToFlight
-      case Some(pos)                                                                             => InFlight(pos)
-      case None                                                                                  => LoadsBattery
+      case Some(dronePosition) if dronePosition.lon == airport.position.lon && dronePosition.lat == airport.position.lat => ReadyToFlight
+      case Some(pos)                                                                                                     => InFlight(pos)
+      case None                                                                                                          => LoadsBattery
     }
 
     val droneId = response.droneId

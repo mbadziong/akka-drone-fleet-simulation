@@ -1,6 +1,6 @@
 package pl.mbadziong.operator
 
-import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import pl.mbadziong.airport.Airport
 import pl.mbadziong.drone.Drone
@@ -41,53 +41,44 @@ object DroneOperator {
                     flightIdToResponse: Map[Long, FlightResponse],
                     nextDroneId: Long): Behavior[Command] = {
     Behaviors.receive { (context, message) =>
-      val flightResponseAdapter = context.messageAdapter(WrappedFlightResponse.apply)
       message match {
         case PrepareDroneFleet(dronesCount, replyTo) =>
           context.log.info(s"Initializing $dronesCount drones for operator $name")
-          var newDrones: Map[Long, ActorRef[Drone.Command]] = Map.empty
-          var tempNextId                                    = nextDroneId
-          (1 to dronesCount) map (
+          var tempNextId = nextDroneId
+          val newFleet = (1 to dronesCount) map (
               _ => {
-                val droneNum = tempNextId
+                val droneActor = context.spawn(Drone(tempNextId, name, airport), s"drone-$tempNextId")
+                context.watchWith(droneActor, DroneTerminated(droneActor, name, tempNextId))
+                droneActor ! BootDrone
+                val idToActor = tempNextId -> droneActor
                 tempNextId = tempNextId + 1
-                val droneActor = context.spawn(Drone(droneNum, name, airport), s"drone-$droneNum")
-                context.watchWith(droneActor, DroneTerminated(droneActor, name, droneNum))
-                newDrones += droneNum.toLong -> droneActor
-                droneActor
+                idToActor
               }
-          ) foreach (
-            _ ! BootDrone
           )
-          val newFleetMap = droneIdToActor ++ newDrones
+          val newFleetMap = droneIdToActor ++ newFleet
           replyTo ! DroneFleetCreated(newFleetMap)
           droneOperator(name, airport, newFleetMap, idToFlightRequest, flightIdToActor, flightIdToDrone, flightIdToResponse, tempNextId)
+
         case AddDroneToFleet(droneId, replyTo) =>
-          droneIdToActor.get(droneId) match {
+          val newDroneIdToActor = droneIdToActor.get(droneId) match {
             case Some(droneActor) =>
               replyTo ! DroneAddedToFleet(droneActor)
-              droneOperator(name,
-                            airport,
-                            droneIdToActor,
-                            idToFlightRequest,
-                            flightIdToActor,
-                            flightIdToDrone,
-                            flightIdToResponse,
-                            nextDroneId)
+              droneIdToActor
             case None =>
               context.log.info(s"Drone $droneId has been assigned to operator $name")
               val droneActor = context.spawn(Drone(droneId, name, airport), s"drone-$droneId")
               context.watchWith(droneActor, DroneTerminated(droneActor, name, droneId))
               replyTo ! DroneAddedToFleet(droneActor)
-              droneOperator(name,
-                            airport,
-                            droneIdToActor + (droneId -> droneActor),
-                            idToFlightRequest,
-                            flightIdToActor,
-                            flightIdToDrone,
-                            flightIdToResponse,
-                            nextDroneId)
+              droneIdToActor + (droneId -> droneActor)
           }
+          droneOperator(name,
+                        airport,
+                        newDroneIdToActor,
+                        idToFlightRequest,
+                        flightIdToActor,
+                        flightIdToDrone,
+                        flightIdToResponse,
+                        nextDroneId)
 
         case DroneTerminated(_, _, droneId) =>
           context.log.info(s"Drone $droneId of operator $name has been terminated")
@@ -99,6 +90,7 @@ object DroneOperator {
                         flightIdToDrone,
                         flightIdToResponse,
                         nextDroneId)
+
         case StopDroneFleet() =>
           Behaviors.stopped
 
@@ -136,8 +128,11 @@ object DroneOperator {
               context.log.info(s"Drone ${entry._1} of operator $name will handle fly request $requestId")
               val flightRequest = idToFlightRequest(requestId)
               val replyTo       = flightIdToActor(flightRequest.id)
-              val routeProvider = context.spawnAnonymous(RouteProvider())
-              routeProvider ! RouteRequest(requestId, airport.position, flightRequest.destination, 10, context.self)
+              context.spawnAnonymous(RouteProvider()) ! RouteRequest(requestId,
+                                                                     airport.position,
+                                                                     flightRequest.destination,
+                                                                     10,
+                                                                     context.self)
               replyTo ! HandleFlightResponse(FlightAccepted(flightRequest.id))
               droneOperator(
                 name,
@@ -149,12 +144,12 @@ object DroneOperator {
                 flightIdToResponse,
                 nextDroneId
               )
+
             case None =>
               val msg = s"Operator $name does not have any drone able to handle fly request $requestId"
               context.log.info(msg)
               val flightRequest = idToFlightRequest(requestId)
-              val replyTo       = flightIdToActor(flightRequest.id)
-              replyTo ! HandleFlightResponse(FlightDenied(flightRequest.id, msg))
+              flightIdToActor(flightRequest.id) ! HandleFlightResponse(FlightDenied(flightRequest.id, msg))
               context.self ! WrappedFlightResponse(FlightDenied(requestId, msg))
               droneOperator(
                 name,
@@ -167,9 +162,11 @@ object DroneOperator {
                 nextDroneId
               )
           }
+
         case RouteResponse(requestId, route) =>
-          val droneRef = flightIdToDrone(requestId)
-          val flight   = Flight(requestId, route)
+          val flightResponseAdapter = context.messageAdapter(WrappedFlightResponse.apply)
+          val droneRef              = flightIdToDrone(requestId)
+          val flight                = Flight(requestId, route)
           droneRef ! Drone.Fly(flight, flightResponseAdapter)
           droneOperator(
             name,
@@ -181,6 +178,7 @@ object DroneOperator {
             flightIdToResponse,
             nextDroneId
           )
+
         case WrappedFlightResponse(flightResponse) =>
           val flightStatus = flightResponse match {
             case FlightCompleted(flightId) =>

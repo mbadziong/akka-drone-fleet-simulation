@@ -36,13 +36,16 @@ object Drone {
         case BootDrone =>
           context.log.info(s"Drone [$operator | $id] booted")
           Behaviors.same
+
         case Fly(flight: Flight, replyTo: ActorRef[FlightResponse]) =>
           context.log.info(s"Drone [$operator | $id] accepted $flight")
           context.self ! DuringFlight(flight, replyTo)
           flying(timers, id, operator, position, tick)
+
         case TurnOffDrone =>
           context.log.info(s"Drone [$operator | $id] has been turned off")
           Behaviors.stopped
+
         case ReadState(requestId, replyTo) =>
           context.log.info(s"State for drone $id is $position")
           replyTo ! RespondState(requestId, id, Some(position))
@@ -64,9 +67,11 @@ object Drone {
               replyTo ! FlightCompleted(flight.id)
               docked(timers, id, operator, position, tick)
           }
+
         case TurnOffDrone =>
           context.log.info(s"Drone [$operator | $id] has been turned off")
           Behaviors.stopped
+
         case ReadState(requestId, replyTo) =>
           context.log.info(s"State for drone $id is $position")
           replyTo ! RespondState(requestId, id, Some(position))
